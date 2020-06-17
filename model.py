@@ -8,7 +8,7 @@ model.fit -- train model (model learns by adjusting weights)
 model.predict -- difference from fit is that it doesn't have input targets
 
 """
-from .utils.py import *
+from utils import *
 import math
 import pandas_datareader as web
 import numpy as np
@@ -17,7 +17,10 @@ from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential, Model
 from keras.layers import Input, Dense, LSTM, Dropout, Activation
 from keras import optimizers
+from keras import models
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
+rcParams.update({'figure.autolayout': True})
 plt.style.use('fivethirtyeight')
 
 
@@ -88,32 +91,39 @@ print("final shape of y_train: ", y_train.shape, type(y_train))
 
 # ---- Model
 # architecture
-lstm_input = Input(shape=(x_train_nd.shape[1], 5), name='input_lstm')
-x = LSTM(50, name='lstm_1')(lstm_input)
-x = Dropout(0.2, name='lstm_dp_1')(x)
-x = Dense(64, name='dense_1')(x)
-x = Activation('sigmoid', name='active_sig_1')(x)
-x = Dense(NUM_COL, name='dense_2')(x)
-output = Activation('linear', name='output_linear')(x)
-
-# compile with optimizer
-model = Model(inputs=lstm_input, outputs=output)
-adam = optimizers.Adam(lr=0.0005)
-model.compile(optimizer=adam, loss='mse')  # opt: add metrics
-# opt: add validation_split, shuffle=True
-hist = model.fit(x=x_train_nd, y=y_train, batch_size=32, epochs=50)
-
-# plot model loss...add other metrics
-plt.plot(hist.history['loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'val'], loc='upper left')
-# plt.show()
+# lstm_input = Input(shape=(x_train_nd.shape[1], 5), name='input_lstm')
+# x = LSTM(50, name='lstm_1')(lstm_input)
+# x = Dropout(0.2, name='lstm_dp_1')(x)
+# x = Dense(64, name='dense_1')(x)
+# x = Activation('sigmoid', name='active_sig_1')(x)
+# x = Dense(NUM_COL, name='dense_2')(x)
+# output = Activation('linear', name='output_linear')(x)
+#
+# # compile with optimizer
+# model = Model(inputs=lstm_input, outputs=output)
+# adam = optimizers.Adam(lr=0.0005)
+# model.compile(optimizer=adam, loss='mse')  # opt: add metrics
+# # opt: add validation_split, shuffle=True
+# hist = model.fit(x=x_train_nd, y=y_train, batch_size=32, epochs=50)
+# model.save('model_1.h5')
+#
+# # plot model loss...add other metrics
+# plt.plot(hist.history['loss'])
+# plt.title('model loss')
+# plt.ylabel('loss')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'val'], loc='upper left')
+# plt.savefig('metrics_model_loss.png')
 
 # ===========================================================
 #                       TESTING
 # ===========================================================
+
+# re-compile, fits and exports model
+# fit_model(x_train_nd, y_train)
+
+model = models.load_model('model_default.h5')
+
 np.set_printoptions(precision=2, suppress=True)
 
 test_data = scaled_data[train_len - HIST_DAYS:, :]
