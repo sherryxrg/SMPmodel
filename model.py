@@ -14,9 +14,6 @@ import pandas_datareader as web
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential, Model
-from keras.layers import Input, Dense, LSTM, Dropout, Activation
-from keras import optimizers
 from keras import models
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
@@ -34,22 +31,8 @@ TRAIN_SIZE = 0.8  # train-test split ratio
 HIST_DAYS = 60  # days of past data to use
 NUM_COL = 5  # number of data columns (e.g. 'Open', 'Close')
 
-# ---- import data
-df = web.DataReader(STOCK_NAME, data_source=DATA_SOURCE,
-                    start=DATE_START, end=DATE_END)
-print("[** preview of import **]")
-pd.set_option('display.max_columns', 1000)
-print(df.head(), "\n")
-print("shape: ", df.shape)
-
-# ---- graph initial df
-
-# ---- extract df columns, convert df to numpy array
-data = df.filter(['High', 'Low', 'Open', 'Close', 'Volume'])
-dataset = data.values
-num_col = dataset.shape[1]
-num_rows = dataset.shape[0]
-print(f"Columns: {num_col},  Rows: {num_rows}")
+# get data
+dataset = get_data(STOCK_NAME, DATA_SOURCE, DATE_START, DATE_END)
 
 # ===========================================================
 #                       TRAINING
@@ -89,40 +72,14 @@ print("\n=*=*=*=*=* TRAIN SET SUMMARY *=*=*=*=*=*=*")
 print("final shape of x_train: ", x_train_nd.shape, type(x_train_nd))
 print("final shape of y_train: ", y_train.shape, type(y_train))
 
-# ---- Model
-# architecture
-# lstm_input = Input(shape=(x_train_nd.shape[1], 5), name='input_lstm')
-# x = LSTM(50, name='lstm_1')(lstm_input)
-# x = Dropout(0.2, name='lstm_dp_1')(x)
-# x = Dense(64, name='dense_1')(x)
-# x = Activation('sigmoid', name='active_sig_1')(x)
-# x = Dense(NUM_COL, name='dense_2')(x)
-# output = Activation('linear', name='output_linear')(x)
-#
-# # compile with optimizer
-# model = Model(inputs=lstm_input, outputs=output)
-# adam = optimizers.Adam(lr=0.0005)
-# model.compile(optimizer=adam, loss='mse')  # opt: add metrics
-# # opt: add validation_split, shuffle=True
-# hist = model.fit(x=x_train_nd, y=y_train, batch_size=32, epochs=50)
-# model.save('model_1.h5')
-#
-# # plot model loss...add other metrics
-# plt.plot(hist.history['loss'])
-# plt.title('model loss')
-# plt.ylabel('loss')
-# plt.xlabel('epoch')
-# plt.legend(['train', 'val'], loc='upper left')
-# plt.savefig('metrics_model_loss.png')
+
+# re-compile, fits and exports model
+# fit_model(x_train_nd, y_train)
+model = models.load_model('model_default.h5')
 
 # ===========================================================
 #                       TESTING
 # ===========================================================
-
-# re-compile, fits and exports model
-# fit_model(x_train_nd, y_train)
-
-model = models.load_model('model_default.h5')
 
 np.set_printoptions(precision=2, suppress=True)
 
