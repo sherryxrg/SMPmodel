@@ -1,4 +1,4 @@
-# :robot: Using this repo #
+# Using this repo #
 
 - please run `main.py` to see predicitons
 - to recompile model, uncomment the `fit_model` function, pass in a *new name* for model and rerun

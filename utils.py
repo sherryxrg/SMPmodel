@@ -14,48 +14,42 @@ from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
 
 
-def gen_training_sets(hist_days, num_columns, train_data):
+def generate_sets(hist_days, num_columns, input_data):
     """
-    Generates the datasets used for training.
-    E.g. if I want to predict using past 60 days,
-    this will generate 60 sets of 5 columns (x_train), which is used to predict
-    High, Low, Open, Close, Volume (y_train).
+    Generates the datasets used for training or testing.
+    training: x_set = x_train
+    testing: x_set = x_test
 
-    :param train_data: subset data used for training
+    :param input_data: subset data used for train or test
     :param hist_days: int, number of days the predicted point learns from
     :param num_columns: int, must match number of cols imported
-    :return: x_train, y_train
+    :return: x_set, y_set
     """
-    x_train = np.zeros((0, num_columns))
-    y_train = np.zeros((0, num_columns))
-    x_train_nd = np.zeros(((len(train_data) - hist_days), hist_days, num_columns))
+    x_set = np.zeros((0, num_columns))
+    y_set = np.zeros((0, num_columns))
+    x_set_nd = np.zeros(((len(input_data) - hist_days), hist_days, num_columns))
 
-    for i in range(hist_days, len(train_data)):
-        x_train = train_data[i - hist_days:i, 0:num_columns]
-        x_train_nd[i - hist_days, :, :] = x_train
-        y_train = np.vstack((y_train, train_data[i, 0:num_columns]))
-        # make sure the test sets are stored correctly
-        if i <= (hist_days + 1):
-            print("preview of a unit of x_train: ")
-            print(x_train.shape)
-            # print(x_train)
-            # print("\npreview of a unit of y_train: ")
-            # print(y_train)
+    for i in range(hist_days, len(input_data)):
+        x_set = input_data[i - hist_days:i, 0:num_columns]
+        x_set_nd[i - hist_days, :, :] = x_set
+        y_set = np.vstack((y_set, input_data[i, 0:num_columns]))
 
-    print("\n=*=*=*=*=* TRAIN SET SUMMARY *=*=*=*=*=*=*")
-    print("final shape of x_train: ", x_train_nd.shape, type(x_train_nd))
-    print("final shape of y_train: ", y_train.shape, type(y_train))
+    print("\n=*=*=*=*=* SUMMARY *=*=*=*=*=*=*")
+    print("final shape of x_set: ", x_set_nd.shape, type(x_set_nd))
+    print("final shape of y_set: ", y_set.shape, type(y_set))
 
-    return x_train_nd, y_train
+    return x_set_nd, y_set
 
 
-def prep_train_data(dataset, train_size):
+def prep_data(dataset, train_size, hist_days, scaler):
     """
     Splits and scales the data for generating training sets.
     MinMaxScaler with this default range scales all datapoints
     within 1 and 0 so big numbers don't interfere with learning.
 
-    :param dataset:
+    :param hist_days: int, number of days the predicted point learns from
+    :param dataset: entire dataset
+    :param scaler: type of scale applied to data
     :param train_size:
     :return: scaled_data - the scaled, full-sized dataset
              train_len - the length of the training set
@@ -64,7 +58,6 @@ def prep_train_data(dataset, train_size):
     train_len = math.ceil(len(dataset) * train_size)
     print("train set length: ", train_len)
 
-    scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_data = scaler.fit_transform(dataset)
 
     train_data = scaled_data[0:train_len, :]
@@ -73,7 +66,17 @@ def prep_train_data(dataset, train_size):
     print("first two rows: ")
     print(train_data[0:2])
 
-    return scaled_data, train_data, train_len
+    test_data = scaled_data[train_len - hist_days:, :]
+    print("\n=== test data ===")
+    print("shape: ", train_data.shape)
+    print("first two rows: ")
+    print(test_data[0:2])
+
+    return scaled_data, train_data, test_data
+
+
+def get_data_wpredicted():
+    pass
 
 
 def get_data(stock_name, data_source, start_date, end_date):
