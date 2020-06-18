@@ -75,20 +75,31 @@ print("actual \n", y_test_check[0])
 #               Predicting w/ imputation
 # ===========================================================
 
-quote = web.DataReader(STOCK_NAME, data_source=DATA_SOURCE,
-                       start='2018-01-01', end='2020-06-01')
+holder_list = np.zeros((0, 5))
 
-new_df = quote.filter(['High', 'Low', 'Open', 'Close', 'Volume'])
-last_xdays = new_df[-HIST_DAYS:].values
-# todo: find a way to continually use past days prediction as data
+predicted_list = get_data_wpredicted(future_days=3,
+                                     dataset=dataset,
+                                     model=model,
+                                     scaler=scaler,
+                                     num_columns=NUM_COL,
+                                     predicted_list=holder_list)
 
-last_xdays_scaled = scaler.transform(last_xdays)
-X_test = [last_xdays_scaled]
-X_test = np.array(X_test)
-X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 5))
-pred_price = model.predict(X_test)
-pred_price = scaler.inverse_transform(pred_price)
-print("final predicted prices:\n", pred_price)
+print(predicted_list)
+
+# quote = web.DataReader(STOCK_NAME, data_source=DATA_SOURCE,
+#                        start='2018-01-01', end='2020-06-01')
+#
+# new_df = quote.filter(['High', 'Low', 'Open', 'Close', 'Volume'])
+# last_xdays = new_df[-HIST_DAYS:].values
+# # todo: find a way to continually use past days prediction as data
+#
+# last_xdays_scaled = scaler.transform(last_xdays)
+# X_test = [last_xdays_scaled]
+# X_test = np.array(X_test)
+# X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 5))
+# pred_price = model.predict(X_test)
+# pred_price = scaler.inverse_transform(pred_price)
+# print("final predicted prices:\n", pred_price)
 
 
 

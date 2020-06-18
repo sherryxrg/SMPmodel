@@ -75,8 +75,49 @@ def prep_data(dataset, train_size, hist_days, scaler):
     return scaled_data, train_data, test_data
 
 
-def get_data_wpredicted():
-    pass
+def get_data_wpredicted(future_days, dataset, model, scaler, num_columns,
+                        predicted_list):
+    """
+    Similar to get_data, except this also contains imputed future data
+    that does not yet exist.
+
+    ??: recursively call predict and future days until future days == 0
+
+    * needs to have 2 lists:
+    1. only keeps record of all predicted rows
+    - actually the second one is dynamic
+
+    :param model: model used for prediction
+    :param num_columns: number of data columns
+    :param predicted_list: growing list of predictions
+    :param scaler: used to scale dataset for predicting
+    :param future_days: how many days into the future to predict for
+    :param dataset: String (e.g. AAPL)
+    :return: predicted_list
+    """
+    # dataset + predicted rows from previous calls
+    current_data = np.concatenate((dataset, predicted_list))
+    print("shape of current data:", current_data.shape)
+    # only take the most recent 60 entries
+    current_data = current_data[-60:]
+
+    # root case
+    if future_days == 0:
+        return predicted_list
+    else:
+        # do round of predictions
+        last_xdays_scaled = scaler.transform(current_data)
+        x_test = [last_xdays_scaled]
+        x_test = np.array(x_test)
+        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], num_columns))
+        pred_price = model.predict(x_test)
+        pred_price = scaler.inverse_transform(pred_price)
+        print(pred_price)
+        np.concatenate((predicted_list, pred_price))
+
+        # append results to predicted list
+        get_data_wpredicted(future_days-1, dataset, model, scaler, num_columns,
+                            predicted_list)
 
 
 def get_data(stock_name, data_source, start_date, end_date):
@@ -87,7 +128,7 @@ def get_data(stock_name, data_source, start_date, end_date):
     :param data_source: String (e.g. Yahoo)
     :param start_date: String (e.g. 2012-01-01)
     :param end_date: String
-    :return:
+    :return: dataset, a numpy array
     """
     print("getting data...")
     df = web.DataReader(stock_name, data_source=data_source,
@@ -99,7 +140,6 @@ def get_data(stock_name, data_source, start_date, end_date):
     num_rows = dataset.shape[0]
     print("=== summary ==")
     print(df.head(), "\n")
-    print("data shape: ", df.shape)
     print(f"Columns: {num_col},  Rows: {num_rows}")
 
     return dataset
