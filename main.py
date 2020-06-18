@@ -12,7 +12,6 @@ from utils import *
 import math
 import pandas_datareader as web
 import numpy as np
-import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from keras import models
 import matplotlib.pyplot as plt
@@ -31,56 +30,31 @@ TRAIN_SIZE = 0.8  # train-test split ratio
 HIST_DAYS = 60  # days of past data to use
 NUM_COL = 5  # number of data columns (e.g. 'Open', 'Close')
 
-# get data
-dataset = get_data(STOCK_NAME, DATA_SOURCE, DATE_START, DATE_END)
-
 # ===========================================================
 #                       TRAINING
 # ===========================================================
 
-# ---- prep data
-train_len = math.ceil(len(dataset) * TRAIN_SIZE)
-print("train set length: ", train_len)
+# get data
+dataset = get_data(STOCK_NAME, DATA_SOURCE,
+                   start_date=DATE_START, end_date=DATE_END)
 
-scaler = MinMaxScaler(feature_range=(0, 1))
-scaled_data = scaler.fit_transform(dataset)
+scaled_data, train_data, train_len = prep_train_data(dataset,
+                                                     train_size=TRAIN_SIZE)
 
-train_data = scaled_data[0:train_len, :]
-print("\n[** train data **]")
-print("shape: ", train_data.shape)
-print(train_data[0:2])
-print()
+x_train_nd, y_train = gen_training_sets(HIST_DAYS, NUM_COL, train_data)
 
-# populate training set for model
-x_train = np.zeros((0, NUM_COL))
-y_train = np.zeros((0, NUM_COL))
-x_train_nd = np.zeros(((len(train_data)-HIST_DAYS), HIST_DAYS, NUM_COL))
-
-for i in range(HIST_DAYS, len(train_data)):
-    x_train = train_data[i-HIST_DAYS:i, 0:NUM_COL]
-    x_train_nd[i-HIST_DAYS, :, :] = x_train
-    y_train = np.vstack((y_train, train_data[i, 0:NUM_COL]))
-    # make sure the test sets are stored correctly
-    if i <= (HIST_DAYS+1):
-        print("preview of a unit of x_train: ")
-        print(x_train.shape)
-        # print(x_train)
-        # print("\npreview of a unit of y_train: ")
-        # print(y_train)
-
-print("\n=*=*=*=*=* TRAIN SET SUMMARY *=*=*=*=*=*=*")
-print("final shape of x_train: ", x_train_nd.shape, type(x_train_nd))
-print("final shape of y_train: ", y_train.shape, type(y_train))
-
-
-# re-compile, fits and exports model
-# fit_model(x_train_nd, y_train)
+# todo: !! uncomment to re-compile, fits and exports model
+# fit_model(x_train_nd, y_train, model_name=None)
 model = models.load_model('model_default.h5')
 
 # ===========================================================
 #                       TESTING
 # ===========================================================
 
+# todo: rewrite MinMaxScaler so it only appears once
+#  (its also in prep_train_data)
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaler.fit_transform(dataset)
 np.set_printoptions(precision=2, suppress=True)
 
 test_data = scaled_data[train_len - HIST_DAYS:, :]

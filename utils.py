@@ -1,9 +1,11 @@
 """
 Functions for importing data and getting training sets
 """
+import math
 import numpy as np
 import pandas as pd
 import pandas_datareader as web
+from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential, Model
 from keras.layers import Input, Dense, LSTM, Dropout, Activation
 from keras import optimizers
@@ -12,9 +14,71 @@ from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
 
 
+def gen_training_sets(hist_days, num_columns, train_data):
+    """
+    Generates the datasets used for training.
+    E.g. if I want to predict using past 60 days,
+    this will generate 60 sets of 5 columns (x_train), which is used to predict
+    High, Low, Open, Close, Volume (y_train).
+
+    :param train_data: subset data used for training
+    :param hist_days: int, number of days the predicted point learns from
+    :param num_columns: int, must match number of cols imported
+    :return: x_train, y_train
+    """
+    x_train = np.zeros((0, num_columns))
+    y_train = np.zeros((0, num_columns))
+    x_train_nd = np.zeros(((len(train_data) - hist_days), hist_days, num_columns))
+
+    for i in range(hist_days, len(train_data)):
+        x_train = train_data[i - hist_days:i, 0:num_columns]
+        x_train_nd[i - hist_days, :, :] = x_train
+        y_train = np.vstack((y_train, train_data[i, 0:num_columns]))
+        # make sure the test sets are stored correctly
+        if i <= (hist_days + 1):
+            print("preview of a unit of x_train: ")
+            print(x_train.shape)
+            # print(x_train)
+            # print("\npreview of a unit of y_train: ")
+            # print(y_train)
+
+    print("\n=*=*=*=*=* TRAIN SET SUMMARY *=*=*=*=*=*=*")
+    print("final shape of x_train: ", x_train_nd.shape, type(x_train_nd))
+    print("final shape of y_train: ", y_train.shape, type(y_train))
+
+    return x_train_nd, y_train
+
+
+def prep_train_data(dataset, train_size):
+    """
+    Splits and scales the data for generating training sets.
+    MinMaxScaler with this default range scales all datapoints
+    within 1 and 0 so big numbers don't interfere with learning.
+
+    :param dataset:
+    :param train_size:
+    :return: scaled_data - the scaled, full-sized dataset
+             train_len - the length of the training set
+             train_data - subset of scaled data used for training
+    """
+    train_len = math.ceil(len(dataset) * train_size)
+    print("train set length: ", train_len)
+
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled_data = scaler.fit_transform(dataset)
+
+    train_data = scaled_data[0:train_len, :]
+    print("\n=== train data ===")
+    print("shape: ", train_data.shape)
+    print("first two rows: ")
+    print(train_data[0:2])
+
+    return scaled_data, train_data, train_len
+
+
 def get_data(stock_name, data_source, start_date, end_date):
     """
-    Gets data from web and converts it to numpy array
+    Gets data from web and converts it to numpy array.
 
     :param stock_name: String (e.g. AAPL)
     :param data_source: String (e.g. Yahoo)
@@ -77,6 +141,13 @@ def fit_model(x_train, y_train, model_name=None):
 
 
 def _get_plots(history):
+    """
+    Plots the loss history as a graph.
+    Loss shrinks as model learns from the data.
+
+    :param history:
+    :return:
+    """
     plt.plot(history.history['loss'])
     plt.title('model loss')
     plt.ylabel('loss')
