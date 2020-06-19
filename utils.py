@@ -81,12 +81,6 @@ def get_data_wpredicted(future_days, dataset, model, scaler, num_columns,
     Similar to get_data, except this also contains imputed future data
     that does not yet exist.
 
-    ??: recursively call predict and future days until future days == 0
-
-    * needs to have 2 lists:
-    1. only keeps record of all predicted rows
-    - actually the second one is dynamic
-
     :param model: model used for prediction
     :param num_columns: number of data columns
     :param predicted_list: growing list of predictions
@@ -97,11 +91,10 @@ def get_data_wpredicted(future_days, dataset, model, scaler, num_columns,
     """
     # dataset + predicted rows from previous calls
     current_data = np.concatenate((dataset, predicted_list))
-    print("shape of current data:", current_data.shape)
     # only take the most recent 60 entries
     current_data = current_data[-60:]
 
-    # root case
+    # base case
     if future_days == 0:
         return predicted_list
     else:
@@ -112,12 +105,11 @@ def get_data_wpredicted(future_days, dataset, model, scaler, num_columns,
         x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], num_columns))
         pred_price = model.predict(x_test)
         pred_price = scaler.inverse_transform(pred_price)
-        print(pred_price)
-        np.concatenate((predicted_list, pred_price))
+        predicted_list = np.concatenate((predicted_list, pred_price))
 
         # append results to predicted list
-        get_data_wpredicted(future_days-1, dataset, model, scaler, num_columns,
-                            predicted_list)
+        return get_data_wpredicted(future_days-1, dataset, model, scaler,
+                                   num_columns, predicted_list)
 
 
 def get_data(stock_name, data_source, start_date, end_date):
