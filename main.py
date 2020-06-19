@@ -69,6 +69,8 @@ x_test_nd, y_test = generate_sets(hist_days=HIST_DAYS,
 
 holder_list = np.zeros((0, 5))
 
+# todo: !! try setting future_days to different numbers to see
+#  more or less predictions
 predicted_list = get_data_wpredicted(future_days=4,
                                      dataset=dataset,
                                      model=model,
