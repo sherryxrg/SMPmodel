@@ -50,8 +50,10 @@ x_train_nd, y_train = generate_sets(hist_days=HIST_DAYS,
                                     input_data=train_data)
 
 # todo: !! uncomment to re-compile, fits and exports model
-# fit_model(x_train_nd, y_train, model_name=None)
-model = models.load_model('model_default.h5')
+model_name = "model" + STOCK_NAME + "_1" + ".h5"
+
+# fit_model(x_train_nd, y_train, model_name=model_name)
+model = models.load_model(model_name)
 
 # ===========================================================
 #                       TESTING
@@ -80,7 +82,17 @@ predicted_list = get_data_wpredicted(future_days=4,
 
 print(predicted_list)
 
+# convert to json
 
+
+
+# ===========================================================
+#                       Graph metrics
+# ===========================================================
+# history = pickle.load(open('metrics/hist_modelAAPL_2', 'rb'))
+# print(history)
+#
+# get_plot(history, 'mae')
 
 
 

@@ -1,11 +1,13 @@
 """
 Functions for importing data and getting training sets
 """
+import pickle
 import math
 import numpy as np
 import pandas as pd
 import pandas_datareader as web
 from sklearn.preprocessing import MinMaxScaler
+from keras import backend
 from keras.models import Sequential, Model
 from keras.layers import Input, Dense, LSTM, Dropout, Activation
 from keras import optimizers
@@ -137,6 +139,10 @@ def get_data(stock_name, data_source, start_date, end_date):
     return dataset
 
 
+def rmse(y_true, y_pred):
+    return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
+
+
 def fit_model(x_train, y_train, model_name=None):
     """
     Compiles and fits the model and saves it as a h5 file.
@@ -162,31 +168,34 @@ def fit_model(x_train, y_train, model_name=None):
     # compile with optimizer
     model = Model(inputs=lstm_input, outputs=output)
     adam = optimizers.Adam(lr=0.0005)
-    model.compile(optimizer=adam, loss='mse')  # opt: add metrics
+    model.compile(optimizer=adam, loss='mse', metrics=['mae'])  # opt: add metrics
     # opt: add validation_split, shuffle=True
     history = model.fit(x=x_train, y=y_train, batch_size=32, epochs=50)
+
+    # save history to print metrics later:
+    history_name = "metrics/hist_" + model_name[:-3]
+    with open(history_name, 'wb') as f:
+        pickle.dump(history.history, f)
 
     if model_name is None:
         model.save('model_default.h5')
     else:
         model.save(model_name)
 
-    # generate model plot
-    _get_plots(history)
 
-
-def _get_plots(history):
+def get_plot(history, metric: str):
     """
     Plots the loss history as a graph.
     Loss shrinks as model learns from the data.
 
+    :param metric: metric to be plotted
     :param history:
     :return:
     """
-    plt.plot(history.history['loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
+    plt.plot(history[metric])
+    plt.title('model' + metric)
+    plt.ylabel(metric)
     plt.xlabel('epoch')
     plt.legend(['train', 'val'], loc='upper left')
-    plt.savefig('metrics_model_loss.png')
+    plt.savefig('metrics_model_' + metric + '.png')
 
