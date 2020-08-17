@@ -8,6 +8,7 @@ model.fit -- train model (model learns by adjusting weights)
 model.predict -- difference from fit is that it doesn't have input targets
 """
 from utils import *
+from utils_2 import *
 import pandas_datareader as web
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -41,21 +42,23 @@ dataset = get_data(stock_name=STOCK_NAME,
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaler.fit_transform(dataset)
 
-scaled_data, train_data, test_data = prep_data(dataset=dataset,
+scaled_data, train_data, test_data = \
+                                tech_prep_data(dataset=dataset,
                                                train_size=TRAIN_SIZE,
                                                hist_days=HIST_DAYS,
                                                scaler=scaler)
 
-x_train_nd, y_train = generate_sets(hist_days=HIST_DAYS,
-                                    num_columns=NUM_COL,
-                                    input_data=train_data)
+x_train_nd, y_train, scaled_tech_ind = tech_generate_sets(hist_days=HIST_DAYS,
+                                         num_columns=NUM_COL,
+                                         input_data=train_data,
+                                         scaler=scaler)
 
-model_name = "model" + STOCK_NAME + "_8-13" + ".h5"
+model_name = "model" + STOCK_NAME + "_8-16" + ".h5"
 
 # todo: !! uncomment to re-compile, fits and exports model
-# fit_model(x_train_nd, y_train, model_name=model_name)
+tech_fit_model(x_train_nd, y_train, tech_train=scaled_tech_ind, model_name=model_name)
 
-create_model_jihyo(x_train_nd, y_train, model_name=model_name)
+# create_model_jihyo(x_train_nd, y_train, model_name=model_name)
 model = models.load_model(model_name)
 
 # ===========================================================
@@ -75,7 +78,7 @@ holder_list = np.zeros((0, 5))
 
 # todo: !! try setting future_days to different numbers to see
 #  more or less predictions
-predicted_list = get_data_wpredicted(future_days=5,
+predicted_list = tech_get_data_wpredicted(future_days=5,
                                      dataset=dataset,
                                      model=model,
                                      scaler=scaler,

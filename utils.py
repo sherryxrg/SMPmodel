@@ -52,7 +52,7 @@ def prep_data(dataset, train_size, hist_days, scaler):
     :param hist_days: int, number of days the predicted point learns from
     :param dataset: entire dataset
     :param scaler: type of scale applied to data
-    :param train_size:
+    :param train_size: ratio size of training vs test
     :return: scaled_data - the scaled, full-sized dataset
              train_len - the length of the training set
              train_data - subset of scaled data used for training
@@ -139,7 +139,7 @@ def get_data(stock_name, data_source, start_date, end_date):
     return dataset
 
 
-def rmse(y_true, y_pred):
+def get_rmse(y_true, y_pred):
     return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
 
 
@@ -181,6 +181,60 @@ def fit_model(x_train, y_train, model_name=None):
         model.save('model_default.h5')
     else:
         model.save(model_name)
+
+
+def create_model_jihyo(x_train, y_train, model_name=None):
+    """
+    test jihyo's model
+
+    :param x_train: numpy array (input of shape (x, y, z))
+    :param y_train: numpy array (prediction labels of shape (x, z))
+    :param model_name: String
+    :return: hist a history callback including metrics
+    """
+    # architecture
+    NUM_NEURONS_FirstLayer = 128
+    NUM_NEURONS_SecondLayer = 64
+    # Build the model
+    model = Sequential()
+    model.add(LSTM(NUM_NEURONS_FirstLayer, input_shape=(
+        x_train.shape[1], x_train.shape[2]), return_sequences=True))
+    model.add(LSTM(NUM_NEURONS_SecondLayer,
+                   input_shape=(NUM_NEURONS_FirstLayer, x_train.shape[2])))
+    model.add(Dense(5))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+
+    history = model.fit(x=x_train, y=y_train, batch_size=32, epochs=50)
+
+    # save history to print metrics later:
+    history_name = "metrics/hist_" + model_name[:-3]
+    with open(history_name, 'wb') as f:
+        pickle.dump(history.history, f)
+
+    if model_name is None:
+        model.save('model_default.h5')
+    else:
+        model.save(model_name)
+
+
+def create_model(look_back, foward_days):
+    """
+    Alternatively testing Jihyo's model.
+    :param look_back:
+    :param foward_days:
+    :return:
+    """
+    NUM_NEURONS_FirstLayer = 128
+    NUM_NEURONS_SecondLayer = 64
+    # Build the model
+    model = Sequential()
+    model.add(LSTM(NUM_NEURONS_FirstLayer, input_shape=(
+        look_back, 1), return_sequences=True))
+    model.add(LSTM(NUM_NEURONS_SecondLayer,
+                   input_shape=(NUM_NEURONS_FirstLayer, 1)))
+    model.add(Dense(foward_days))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    return model
 
 
 def get_plot(history, metric: str):
